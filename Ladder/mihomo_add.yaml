@@ -1,0 +1,68 @@
+
+
+rule-providers:
+
+
+    
+  todesk:
+    type: http
+    behavior: classical
+    interval: 43200
+    proxy: 🎯代理
+    url: https://raw.githubusercontent.com/blackTangerine11/mihomo_rules_profile/master/rules/Todesk.yaml
+    path: ./rule_set/todesk.yaml
+
+# Rules
+rules: 
+  - DOMAIN,cdn.steamusercontent.com,🌐其他
+  
+  - PROCESS-PATH-REGEX,(?i).*portable\\mpv.*,Emby
+  - PROCESS-PATH-REGEX,(?i).*portable\\1mpv.*,DIRECT
+
+  - PROCESS-NAME,com.discord,Discord
+
+  - PROCESS-PATH-REGEX,(?i).*\\guguai.*,DIRECT
+
+  - PROCESS-NAME-REGEX,(?i).*GameViewer.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*\\GameViewer.*,DIRECT
+
+
+  - PROCESS-NAME-REGEX,(?i).*rustdesk.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*\\RustDesk.*,DIRECT
+
+  - PROCESS-PATH-REGEX,(?i).*\\Radmin VPN.*,DIRECT
+
+  - PROCESS-PATH-REGEX,(?i).*\\SakuraFrpLauncher.*,DIRECT
+
+  - RULE-SET,todesk,DIRECT
+
+  # Game
+  - PROCESS-PATH-REGEX,(?i).*common\\AWayOut.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*common\\Counter-Strike Global Offensive.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*common\\Draw & Guess.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*common\\Overcooked! 2.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*common\\Left 4 Dead 2.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*common\\Party Animals.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*common\\Pummel Party.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*common\\PEAK.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*common\\DDraceNetwork.*,DIRECT
+  - PROCESS-PATH-REGEX,(?i).*common\\REPO.*,DIRECT
+
+
+  # Emby
+  - PROCESS-NAME,com.mountains.hills,Emby
+
+  # Windows联网搜索
+  - PROCESS-PATH-REGEX,(?i).*\\Windows\\SystemApps.*SearchHost.exe.*,REJECT
+
+  # Studio One
+  - PROCESS-NAME,Studio One.exe,REJECT
+
+  # Adobe
+  - PROCESS-PATH-REGEX,(?i).*adobe\\.*,REJECT
+
+  # Pikpak
+  - PROCESS-NAME,DownloadServer.exe,Pikpak
+
+
+
