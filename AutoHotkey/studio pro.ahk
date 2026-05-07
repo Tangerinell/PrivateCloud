@@ -5,6 +5,7 @@
 ; ==============================================================================
 global MacroKey_Mute   := "-"                ; 【需修改】例如你给“静音宏”绑定了 [ 键
 global MacroKey_Unmute := "="                ; 【需修改】例如你给“取消静音宏”绑定了 ] 键
+global StartMuted      := true              ; 【新增】脚本启动时默认状态：true 为闭麦(静音)，false 为开麦
 
 ; ==============================================================================
 ; OSD 1 独立配置区 (例如：主屏幕下方) - 状态切换时短暂显示
@@ -26,11 +27,12 @@ global Osd1_Config := {
 ; OSD 2 独立配置区 (例如：副屏幕 / 或者直播画面专用) - 常驻显示
 ; ==============================================================================
 global Osd2_Config := {
+    VisibleOnStart: true,                ; 【新增】启动时是否默认开启常驻 OSD (true: 开启, false: 关闭)
     PosX: Integer(A_ScreenWidth * 0.835), ; 水平位置: 比如改为 -1000 可以显示在左侧副屏
-    PosY: Integer(A_ScreenHeight * 0.927), ; 垂直位置: 默认屏幕 86% 高度
+    PosY: Integer(A_ScreenHeight * 0.92), ; 垂直位置: 默认屏幕 86% 高度
     FontSize: 15,                        ; 可以设置跟 OSD1 完全不同的字体大小
     FontWeight: 900,                     ; 更粗的字体
-    FontAlpha: 200,                      ; 字体透明度 (0-255)
+    FontAlpha: 200,                        ; 字体透明度 (0-255)
     ColorOn: "00FF00",                   ; 开启时的颜色
     ColorOff: "FF3333",                  ; 静音时的颜色
     OutlineSize: 2,                      ; 【新增】描边粗细 (数字越大越粗，0为关闭描边)
@@ -106,11 +108,30 @@ global osd1 := OSD(Osd1_Config)
 global osd2 := OSD(Osd2_Config)
 
 ; 记录 AHK 内部当前状态
-global isMuted := false
-global isOsd2Visible := true  ; 记录常驻 OSD2 的显示状态
+global isMuted := StartMuted
+global isOsd2Visible := Osd2_Config.VisibleOnStart  ; 根据配置项决定初始显示状态
 
-; 脚本启动时，初始化常驻 OSD2 的默认显示
-osd2.Update("UNMUTED", false)
+; 脚本启动时：如果 Studio Pro 已运行，发送一次初始状态的快捷键进行同步，并显示临时 OSD
+if WinExist("ahk_exe Studio Pro.exe") {
+    if (isMuted) {
+        SmartSendToS1(MacroKey_Mute)
+        osd1.Update("MUTED", true)
+    } else {
+        SmartSendToS1(MacroKey_Unmute)
+        osd1.Update("UNMUTED", false)
+    }
+    ; 设置定时器隐藏临时 OSD1
+    SetTimer(HideOSD1, -Osd1_Config.DisplayTime)
+}
+
+; 脚本启动时，根据配置决定是否显示常驻 OSD2，并匹配启动状态
+if (isOsd2Visible) {
+    if (isMuted) {
+        osd2.Update("MUTED", true)
+    } else {
+        osd2.Update("UNMUTED", false)
+    }
+}
 
 ; ==============================================================================
 ; 快捷键功能区
