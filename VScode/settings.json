@@ -1,0 +1,33 @@
+{
+    "C_Cpp.copilotHover": "disabled",
+    "chat.agent.enabled": false,
+    "chat.commandCenter.enabled": false,
+    "chat.extensionTools.enabled": false,
+    "chat.focusWindowOnConfirmation": false,
+    "chat.setupFromDialog": false,
+    "telemetry.feedback.enabled": false,
+    "debug.onTaskErrors": "abort",
+    "security.workspace.trust.untrustedFiles": "open",
+    "workbench.editorAssociations": {
+        "*.yaml": "default"
+    },
+    "[yaml]": {
+        "diffEditor.ignoreTrimWhitespace": false,
+        "editor.autoIndent": "full"
+    },
+    "editor.colorDecoratorsActivatedOn": "hover",
+    "editor.cursorBlinking": "smooth",
+    "editor.cursorSmoothCaretAnimation": "on",
+    "explorer.confirmDelete": false,
+    "editor.smoothScrolling": true,
+    "workbench.list.smoothScrolling": true,
+    "editor.mouseWheelScrollSensitivity": 3,
+    "editor.wordWrap": "on",
+    "editor.mouseWheelZoom": true,
+    "terminal.integrated.suggest.cdPath": "off",
+    "editor.fontSize": 17,
+    "terminal.integrated.cursorStyle": "line",
+    "terminal.integrated.cursorWidth": 2,
+    "terminal.integrated.cursorBlinking": true,
+    "redhat.telemetry.enabled": true
+}
