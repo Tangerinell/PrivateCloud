@@ -16,78 +16,161 @@ Persistent ; 保持脚本运行
 ; ==============================================================================
 OnError(CatchVmrErrors)
 CatchVmrErrors(err, mode) {
-    ; 只要错误是由 VMR.ahk 抛出的，或者是 -nan 导致的数学运算错误，直接静默吃掉
     if (InStr(err.File, "VMR.ahk") || InStr(err.Message, "-nan")) {
-        global vm := "" ; 发生错误说明连接异常，重置实例以便后续静默重连
-        return 1 ; 返回 1，彻底阻止系统弹窗报错
+        global vm := "" 
+        return 1 
     }
 }
 
 ; ==============================================================================
 ; 基础配置区 (Voicemeeter 路径与窗口配置)
 ; ==============================================================================
-global exeName := "voicemeeter8x64.exe"                                ; 主进程名
-global appPath := "C:\Program Files (x86)\VB\Voicemeeter\voicemeeter8x64.exe"  ; 安装路径
-global titleContains := "Voicemeeter Potato"                           ; 窗口标题包含的关键字
-global lastHwnd := 0                                                   ; 记录上次窗口句柄
-global vm := ""                                                        ; 存储 VMR 实例对象
+global exeName := "voicemeeter8x64.exe"                                
+global appPath := "C:\Program Files (x86)\VB\Voicemeeter\voicemeeter8x64.exe"  
+global titleContains := "Voicemeeter Potato"                           
+global lastHwnd := 0                                                   
+global vm := ""                                                        
 
 ; ==============================================================================
-; OSD 配置区 (纯净文字版)
+; 灵活切换通道配置 (快捷键 Ctrl+F11 切换输出通道)
+; 对应 Voicemeeter 总线序号: 1=A1, 2=A2, 3=A3, 4=A4, 5=A5, 6=B1, 7=B2, 8=B3
 ; ==============================================================================
-global PosX := "Center"                      ; 水平位置
-global PosY := Integer(A_ScreenHeight * 0.8) ; 垂直位置: 默认在屏幕 80% 高度
-global FontSize     := 18                    ; 字体大小
-global FontWeight   := 700                   ; 字体粗细
-global FontAlpha    := 180                   ; 字体透明度
-global FontColorOn  := "00FF00"              ; 麦克风开启时的颜色
-global FontColorOff := "FF3333"              ; 麦克风静音时的颜色
+global BusName1  := "A3"   ; 用于 OSD 显示的名字
+global BusIndex1 := 3      ; 对应的 API 序号 (A3 = 3)
+
+global BusName2  := "A4"   ; 用于 OSD 显示的名字
+global BusIndex2 := 4      ; 对应的 API 序号 (A4 = 4)
 
 ; ==============================================================================
-; 初始化 Voicemeeter (已修改为静默模式)
+; OSD 独立配置区 (为不同功能分配不同位置，防止重合)
+; ==============================================================================
+
+; 1. 麦克风开关 OSD 配置 (位置稍高: 75%)
+global Osd_Mic_Config := {
+    PosX: "Center",
+    PosY: Integer(A_ScreenHeight * 0.75), 
+    FontSize: 20,
+    FontWeight: 700,
+    FontAlpha: 180,
+    ColorOn: "00FF00",
+    ColorOff: "FF3333",
+    OutlineSize: 1,
+    OutlineColor: "000000",
+    DisplayTime: 1500
+}
+
+; 2. 通道切换 (A3/A4) OSD 配置 (位置居中: 82%)
+global Osd_Bus_Config := {
+    PosX: "Center",
+    PosY: Integer(A_ScreenHeight * 0.82), 
+    FontSize: 20,
+    FontWeight: 700,
+    FontAlpha: 180,
+    ColorOn: "00FF00",
+    ColorOff: "FF3333",
+    OutlineSize: 1,
+    OutlineColor: "000000",
+    DisplayTime: 1500
+}
+
+; 3. 音频引擎重启 OSD 配置 (位置稍低: 89%)
+global Osd_Engine_Config := {
+    PosX: "Center",
+    PosY: Integer(A_ScreenHeight * 0.89), 
+    FontSize: 18,
+    FontWeight: 700,
+    FontAlpha: 180,
+    ColorOn: "00FF00",
+    ColorOff: "FF3333",
+    OutlineSize: 1,
+    OutlineColor: "000000",
+    DisplayTime: 2000
+}
+
+; ==============================================================================
+; OSD 屏幕提示类 (支持多实例独立定时器)
+; ==============================================================================
+class OSD {
+    __New(cfg) {
+        this.cfg := cfg
+        this.OutlineCtrls := []
+        
+        this.Gui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20 +E0x08000000")
+        this.Gui.BackColor := "010101"
+        WinSetTransColor("010101 " this.cfg.FontAlpha, this.Gui.Hwnd)
+        this.Gui.SetFont("s" this.cfg.FontSize " w" this.cfg.FontWeight " q4", "Microsoft YaHei")
+        
+        if (this.cfg.OutlineSize > 0) {
+            s := this.cfg.OutlineSize
+            offsets := [[s,0], [-s,0], [0,s], [0,-s], [s,s], [-s,-s], [s,-s], [-s,s]]
+            for offset in offsets {
+                ctrlX := 20 + offset[1]
+                ctrlY := 20 + offset[2]
+                ctrl := this.Gui.Add("Text", "x" ctrlX " y" ctrlY " w600 Center c" this.cfg.OutlineColor " BackgroundTrans", "")
+                this.OutlineCtrls.Push(ctrl)
+            }
+        }
+        
+        this.MainCtrl := this.Gui.Add("Text", "x20 y20 w600 Center c" this.cfg.ColorOn " BackgroundTrans", "")
+        
+        ; 绑定隐藏函数，用于独立定时器
+        this.HideCallback := ObjBindMethod(this, "Hide")
+    }
+    
+    Update(text, isMuted) {
+        currentColor := isMuted ? this.cfg.ColorOff : this.cfg.ColorOn
+        this.MainCtrl.SetFont("c" currentColor)
+        this.MainCtrl.Value := text
+        for ctrl in this.OutlineCtrls {
+            ctrl.Value := text
+        }
+        
+        this.Gui.Show("NoActivate x" this.cfg.PosX " y" this.cfg.PosY)
+        WinSetAlwaysOnTop(1, this.Gui.Hwnd)
+        
+        ; 自动管理自身的隐藏定时器 (防止不同 OSD 互相干扰)
+        if (this.cfg.DisplayTime > 0) {
+            SetTimer(this.HideCallback, -this.cfg.DisplayTime)
+        }
+    }
+    
+    Hide() {
+        this.Gui.Hide()
+    }
+}
+
+; 实例化三个独立的全局 OSD 对象
+global osdMic := OSD(Osd_Mic_Config)
+global osdBus := OSD(Osd_Bus_Config)
+global osdEngine := OSD(Osd_Engine_Config)
+
+; ==============================================================================
+; 初始化 Voicemeeter (静默模式)
 ; ==============================================================================
 if ProcessExist(exeName) {
     try {
         SplitPath(appPath, , &vmDir)
         global vm := VMR(vmDir)
-        vm.Login(false) ; 传入 false 避免 VMR 库内部的弹窗
+        vm.Login(false)
     } catch {
-        ; 失败时不弹窗、不退出，保持脚本静默运行，等待按下快捷键时自动重试
         global vm := "" 
     }
 }
 
 ; ==============================================================================
-; 创建 OSD 屏幕提示界面 (纯净文字版)
-; ==============================================================================
-global textGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20 +E0x08000000")
-
-; 将背景设为纯黑，然后抠除黑色，剩余文字应用 FontAlpha 透明度
-transColor := "000000"
-textGui.BackColor := transColor
-WinSetTransColor(transColor " " FontAlpha, textGui.Hwnd)
-
-; 设置内边距和字体属性
-textGui.MarginX := 30
-textGui.MarginY := 15
-textGui.SetFont("s" FontSize " w" FontWeight, "Microsoft YaHei")
-
-; 添加文本控件
-global osdText := textGui.Add("Text", "w400 Center c" FontColorOn, "麦克风已开启")
-
-; ==============================================================================
 ; 快捷键功能区
 ; ==============================================================================
 
-; 【快捷键：Ctrl + F10】 -> 切换麦克风状态并显示 OSD
-; 这里应您的要求注释掉，不再触发 Voicemeeter 的静音
+; 【快捷键：Ctrl + F10】 -> 切换麦克风状态并显示 OSD (默认注释，需要可解除)
 ; ^F10::ToggleMic()
+
+; 【快捷键：Ctrl + F11】 -> 切换 任意两个通道的静音状态 (互斥切换)
+^F11::ToggleAudioBus()
 
 ; 【快捷键：Alt + C (!c)】 -> 切换显示/隐藏 Voicemeeter 窗口
 !v:: {
     global lastHwnd
     
-    ; 优先使用上次记录的窗口句柄（最小化后最可靠）
     if (lastHwnd && WinExist("ahk_id " lastHwnd)) {
         if WinActive("ahk_id " lastHwnd) {
             WinMinimize
@@ -97,7 +180,6 @@ global osdText := textGui.Add("Text", "w400 Center c" FontColorOn, "麦克风已
         return
     }
     
-    ; 遍历查找已打开的 Voicemeeter 窗口
     foundHwnd := 0
     for hwnd in WinGetList("ahk_exe " exeName) {
         title := WinGetTitle(hwnd)
@@ -117,10 +199,7 @@ global osdText := textGui.Add("Text", "w400 Center c" FontColorOn, "麦克风已
         return
     }
     
-    ; 完全没打开 → 启动程序
     Run appPath
-    
-    ; 等待窗口出现并记录句柄
     WinWait "ahk_exe " exeName, , 10
     Sleep 800
     for hwnd in WinGetList("ahk_exe " exeName) {
@@ -133,27 +212,26 @@ global osdText := textGui.Add("Text", "w400 Center c" FontColorOn, "麦克风已
     }
 }
 
-; 【快捷键：Alt + R (!r)】 -> 重启 Voicemeeter 音频引擎
+; 【快捷键：Alt + R (!r)】 -> 重启 Voicemeeter 音频引擎并显示 OSD
 !r:: {
-    global vm
+    global vm, osdEngine
     
     if !ProcessExist(exeName) {
-        return ; 如果主程序没运行，直接静默跳过
+        return 
     }
     
     try {
-        ; 如果尚未初始化或连接丢失，静默重新初始化 VMR
         if (!IsObject(vm) || !vm.HasProp("Type") || !vm.Type) {
             SplitPath(appPath, , &vmDir)
             vm := VMR(vmDir)
             vm.Login(false)
         }
         
-        ; 执行重启指令 (已移除 ToolTip 提示，实现完全静默)
         vm.Command.Restart()
+        osdEngine.Update("音频引擎已重启", false)
         
     } catch {
-        vm := "" ; 连接出错时清空实例静默失败，确保下次重试
+        vm := "" 
     }
 }
 
@@ -161,54 +239,71 @@ global osdText := textGui.Add("Text", "w400 Center c" FontColorOn, "麦克风已
 ; 辅助函数区
 ; ==============================================================================
 ToggleMic() {
-    global vm
+    global vm, osdMic
 
     if !ProcessExist(exeName) {
-        return ; 如果主程序没运行，直接静默跳过
+        return 
     }
 
-    ; 每次调用前检查状态，如果未连接则尝试静默重连
     if (!IsObject(vm) || !vm.HasProp("Type") || !vm.Type) {
         try {
             SplitPath(appPath, , &vmDir)
             vm := VMR(vmDir)
             vm.Login(false)
         } catch {
-            return ; 如果还是连不上，直接静默中断操作
+            return 
         }
     }
 
     try {
-        ; 读取 in1 的静音状态作为基准
         currentState := vm.Strip[1].mute
         newState := !currentState
         
-        ; 同时设置 in1 (Strip 1) 和 虚拟in3 (Strip 8) 的静音状态
         vm.Strip[1].mute := newState
 
-        ; 更改 OSD 的文本和颜色
         if (newState) {
-            osdText.SetFont("c" FontColorOff)
-            osdText.Value := "MUTED"
+            osdMic.Update("MUTED", true)
         } else {
-            osdText.SetFont("c" FontColorOn)
-            osdText.Value := "UNMUTED"
+            osdMic.Update("UNMUTED", false)
         }
-        
-        ; 显示界面，根据配置区设定的坐标显示
-        textGui.Show("NoActivate x" PosX " y" PosY)
-        
-        ; 【核心修改】：强制将窗口置于最顶层，防止被全屏化/无边框游戏遮挡
-        WinSetAlwaysOnTop(1, textGui.Hwnd)
-        
-        ; 重新设置定时器，1秒（-1000毫秒）后执行隐藏
-        SetTimer(HideOSD, -1000)
     } catch {
-        ; 如果通信过程出错（例如VM突然关闭），清除连接实例，等待下次重试
         vm := ""
     }
 }
 
-HideOSD() {
-    textGui.Hide()
+ToggleAudioBus() {
+    global vm, osdBus
+    global BusName1, BusIndex1, BusName2, BusIndex2
+
+    if !ProcessExist(exeName) {
+        return
+    }
+
+    if (!IsObject(vm) || !vm.HasProp("Type") || !vm.Type) {
+        try {
+            SplitPath(appPath, , &vmDir)
+            vm := VMR(vmDir)
+            vm.Login(false)
+        } catch {
+            return
+        }
+    }
+
+    try {
+        currentState1 := vm.Bus[BusIndex1].mute
+        
+        newState1 := !currentState1
+        vm.Bus[BusIndex1].mute := newState1
+        vm.Bus[BusIndex2].mute := currentState1
+
+        if (newState1) {
+            ; 当 Bus1 被静音时，说明切到了 Bus2 (A4)，这里传 true 应用 ColorOff
+            osdBus.Update("SWITCH TO " BusName2 "", true)
+        } else {
+            ; 当 Bus1 发声时，说明切到了 Bus1 (A3)，这里传 false 应用 ColorOn
+            osdBus.Update("SWITCH TO " BusName1 "", false)
+        }
+    } catch {
+        vm := ""
+    }
 }
