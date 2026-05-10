@@ -4,7 +4,7 @@
 	<OptionDev mme='1024' wdm='512' ks='512' asio='0' srasio='0' msA1='0.00' msA2='0.00' msA3='0.00' msA4='0.00' msA5='0.00' />
 	<ExternalFXsend send1ch1='0' send1ch2='0' send2ch1='0' send2ch2='0' />
 	<ExternalFXreturn ret1ch1='0' ret1ch2='0' ret2ch1='0' ret2ch2='0' />
-	<InputDev index='1' type='8' name="Mix 01" />
+	<InputDev index='1' type='8' name="Mix 02" />
 	<InputDev index='2' name="-" />
 	<InputDev index='3' name="-" />
 	<InputDev index='4' name="-" />
@@ -28,9 +28,9 @@
 	<LabelVirtualStrip1>System</LabelVirtualStrip1>
 	<LabelVirtualStrip2>Player</LabelVirtualStrip2>
 	<LabelVirtualStrip3>DAW</LabelVirtualStrip3>
-	<VMOptions MonitorOnSEL='0' SliderRelative='0' />
+	<VMOptions MonitorOnSEL='1' SliderRelative='0' />
 	<K7BUSRoute busa='0' busa2='0' busa3='1'  busa4='1'  busa5='1' busb='0' busb2='0' busb3='0' dblevel='-9.91' />
-	<Strip index='1' layout='0' mute='0' vaio='0' solo='0' mono='0' muc='0' EQon='0' prg_c='0' prg_g='0' prg_d='0' busa='0' busa2='0' busa3='0' busa4='0' busa5='0' busb='0' busb2='0' busb3='1' karaoke='0' dblevel='0.00' dblimit='12.00' layer1='0.00' layer2='0.00' layer3='0.00' layer4='0.00' layer5='0.00' layer6='0.00' layer7='0.00' layer8='0.00' />
+	<Strip index='1' layout='0' mute='0' vaio='0' solo='0' mono='0' muc='0' EQon='0' prg_c='0' prg_g='0' prg_d='0' busa='0' busa2='0' busa3='0' busa4='1' busa5='0' busb='0' busb2='0' busb3='0' karaoke='0' dblevel='-15.00' dblimit='12.00' layer1='-15.00' layer2='-15.00' layer3='-15.00' layer4='-15.00' layer5='-15.00' layer6='-15.00' layer7='-15.00' layer8='-15.00' />
 	<StripComp index='1' gainin='0.00' attack='10.0' release='50.0' knee='0.50' comprate='1.000' threshold='-40.00' automakeup='1' gainout='0.00' />
 	<StripGate index='1' thresin='-60.00' damping='-60.00' bpsidechain='100' attack='10.0' hold='200.0' release='1250.0' />
 	<StripPitch index='1' pitchon='0' drywet='100.00' pitchvalue='0.00' formantlo='0.00' formantmed='0.00' formanthigh='0.00' />
@@ -54,7 +54,7 @@
 	<StripPitch index='4' pitchon='0' drywet='100.00' pitchvalue='0.00' formantlo='0.00' formantmed='0.00' formanthigh='0.00' />
 	<Strip index='4' sendR='0.00' postR='0' sendD='0.00' postD='0' sendFx1='0.00' postFx1='0' sendFx2='0.00' postFx2='0' />
 	<Strip index='4' paneltype='1' Panel3Dx='0.000' Panel3Dy='0.000' ColorPanelx='0.000' ColorPanely='0.000' ModPanelx='0.000' ModPanely='0.000' audibility_c='0.00' audibility_g='0.00' denoiser_g='0.00' dn_bypass='0' dn_learn='1' />
-	<Strip index='5' layout='0' mute='0' vaio='1' solo='0' mono='0' muc='0' EQon='0' prg_c='0' prg_g='0' prg_d='0' busa='0' busa2='0' busa3='1' busa4='1' busa5='1' busb='0' busb2='0' busb3='0' karaoke='0' dblevel='-9.00' dblimit='12.00' layer1='-9.00' layer2='-9.00' layer3='-9.00' layer4='-9.00' layer5='-9.00' layer6='-9.00' layer7='-9.00' layer8='-9.00' />
+	<Strip index='5' layout='0' mute='0' vaio='1' solo='0' mono='0' muc='0' EQon='0' prg_c='0' prg_g='0' prg_d='0' busa='0' busa2='0' busa3='1' busa4='1' busa5='1' busb='0' busb2='0' busb3='0' karaoke='0' dblevel='-18.00' dblimit='12.00' layer1='-18.00' layer2='-18.00' layer3='-18.00' layer4='-18.00' layer5='-18.00' layer6='-18.00' layer7='-18.00' layer8='-18.00' />
 	<StripComp index='5' gainin='0.00' attack='10.0' release='50.0' knee='0.50' comprate='1.000' threshold='-40.00' automakeup='1' gainout='0.00' />
 	<StripGate index='5' thresin='-60.00' damping='-60.00' bpsidechain='100' attack='10.0' hold='200.0' release='1250.0' />
 	<StripPitch index='5' pitchon='0' drywet='100.00' pitchvalue='0.00' formantlo='0.00' formantmed='0.00' formanthigh='0.00' />
@@ -82,9 +82,9 @@
 	<Bus  index='1' retR='0.00' retD='0.00' retFx1='0.00' retFx2='0.00' />
 	<Bus index='2' mute='0' vaio='0' mono='0' cross='0' BusMode='0' EQon='0' SEL='0' monitor='0' dblevel='0.00' />
 	<Bus  index='2' retR='0.00' retD='0.00' retFx1='0.00' retFx2='0.00' />
-	<Bus index='3' mute='0' vaio='0' mono='0' cross='0' BusMode='0' EQon='0' SEL='0' monitor='0' dblevel='0.00' />
+	<Bus index='3' mute='1' vaio='0' mono='0' cross='0' BusMode='0' EQon='0' SEL='0' monitor='0' dblevel='0.00' />
 	<Bus  index='3' retR='0.00' retD='0.00' retFx1='0.00' retFx2='0.00' />
-	<Bus index='4' mute='1' vaio='0' mono='0' cross='0' BusMode='0' EQon='0' SEL='0' monitor='0' dblevel='0.00' />
+	<Bus index='4' mute='0' vaio='0' mono='0' cross='0' BusMode='0' EQon='0' SEL='0' monitor='0' dblevel='0.00' />
 	<Bus  index='4' retR='0.00' retD='0.00' retFx1='0.00' retFx2='0.00' />
 	<Bus index='5' mute='1' vaio='0' mono='0' cross='0' BusMode='0' EQon='0' SEL='0' monitor='0' dblevel='0.00' />
 	<Bus  index='5' retR='0.00' retD='0.00' retFx1='0.00' retFx2='0.00' />
@@ -92,7 +92,7 @@
 	<Bus  index='6' retR='0.00' retD='0.00' retFx1='0.00' retFx2='0.00' />
 	<Bus index='7' mute='1' vaio='0' mono='0' cross='0' BusMode='0' EQon='0' SEL='0' monitor='0' dblevel='0.00' />
 	<Bus  index='7' retR='0.00' retD='0.00' retFx1='0.00' retFx2='0.00' />
-	<Bus index='8' mute='0' vaio='0' mono='0' cross='0' BusMode='0' EQon='0' SEL='0' monitor='0' dblevel='0.00' />
+	<Bus index='8' mute='1' vaio='0' mono='0' cross='0' BusMode='0' EQon='0' SEL='0' monitor='0' dblevel='0.00' />
 	<Bus  index='8' retR='0.00' retD='0.00' retFx1='0.00' retFx2='0.00' />
 	<FXSection  freverb='0' fdelay='0' fdelayIsC5='0'>
 <VoiceMeeterReverb>
