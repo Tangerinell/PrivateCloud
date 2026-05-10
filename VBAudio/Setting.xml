@@ -30,7 +30,7 @@
 	<LabelVirtualStrip3>DAW</LabelVirtualStrip3>
 	<VMOptions MonitorOnSEL='1' SliderRelative='0' />
 	<K7BUSRoute busa='0' busa2='0' busa3='1'  busa4='1'  busa5='1' busb='0' busb2='0' busb3='0' dblevel='-9.91' />
-	<Strip index='1' layout='0' mute='0' vaio='0' solo='0' mono='0' muc='0' EQon='0' prg_c='0' prg_g='0' prg_d='0' busa='0' busa2='0' busa3='0' busa4='1' busa5='0' busb='0' busb2='0' busb3='0' karaoke='0' dblevel='-15.00' dblimit='12.00' layer1='-15.00' layer2='-15.00' layer3='-15.00' layer4='-15.00' layer5='-15.00' layer6='-15.00' layer7='-15.00' layer8='-15.00' />
+	<Strip index='1' layout='0' mute='1' vaio='0' solo='0' mono='0' muc='0' EQon='0' prg_c='0' prg_g='0' prg_d='0' busa='0' busa2='0' busa3='1' busa4='1' busa5='1' busb='0' busb2='0' busb3='0' karaoke='0' dblevel='-15.00' dblimit='12.00' layer1='-15.00' layer2='-15.00' layer3='-15.00' layer4='-15.00' layer5='-15.00' layer6='-15.00' layer7='-15.00' layer8='-15.00' />
 	<StripComp index='1' gainin='0.00' attack='10.0' release='50.0' knee='0.50' comprate='1.000' threshold='-40.00' automakeup='1' gainout='0.00' />
 	<StripGate index='1' thresin='-60.00' damping='-60.00' bpsidechain='100' attack='10.0' hold='200.0' release='1250.0' />
 	<StripPitch index='1' pitchon='0' drywet='100.00' pitchvalue='0.00' formantlo='0.00' formantmed='0.00' formanthigh='0.00' />
