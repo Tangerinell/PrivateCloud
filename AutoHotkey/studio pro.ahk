@@ -1,64 +1,64 @@
 ﻿#Requires AutoHotkey v2.0
+#MaxThreadsPerHotkey 2  ; 【优化】允许快捷键同时最多运行2个线程，防止手速过快导致按键被忽略
 
 ; ==============================================================================
 ; 【核心配置】Studio One 内部绝对宏快捷键映射
 ; ==============================================================================
 global MacroKey_Mute   := "-"                ; 【需修改】例如你给“静音宏”绑定了 [ 键
 global MacroKey_Unmute := "="                ; 【需修改】例如你给“取消静音宏”绑定了 ] 键
-global StartMuted      := true              ; 【新增】脚本启动时默认状态：true 为闭麦(静音)，false 为开麦
+global StartMuted      := true               ; 脚本启动时默认状态：true 为闭麦(静音)，false 为开麦
 
 ; ==============================================================================
 ; OSD 1 独立配置区 (例如：主屏幕下方) - 状态切换时短暂显示
 ; ==============================================================================
 global Osd1_Config := {
-    PosX: "Center",                      ; 水平位置: "Center" 居中，或填数字如 100, -1000(左副屏)
-    PosY: Integer(A_ScreenHeight * 0.8), ; 垂直位置: 默认屏幕 80% 高度
-    FontSize: 20,                        ; 字体大小
-    FontWeight: 700,                     ; 字体粗细 (400正常, 700粗体)
-    FontAlpha: 140,                      ; 字体透明度 (0-255)
-    ColorOn: "00FF00",                   ; 开启时的颜色 (绿色)
-    ColorOff: "FF3333",                  ; 静音时的颜色 (红色)
-    OutlineSize: 1,                      ; 描边粗细 (数字越大越粗，0为关闭描边)
-    OutlineColor: "000000",              ; 描边颜色 (黑色最佳)
-    DisplayTime: 1000                    ; 显示时长(毫秒)，例如 1500 代表 1.5 秒后自动隐藏
+    PosX: "Center",                      
+    PosY: Integer(A_ScreenHeight * 0.8), 
+    FontSize: 20,                        
+    FontWeight: 700,                     
+    FontAlpha: 140,                      
+    ColorOn: "00FF00",                   
+    ColorOff: "FF3333",                  
+    OutlineSize: 1,                      
+    OutlineColor: "000000",              
+    DisplayTime: 1000                    
 }
 
 ; ==============================================================================
 ; OSD 2 独立配置区 (例如：副屏幕 / 或者直播画面专用) - 常驻显示
 ; ==============================================================================
 global Osd2_Config := {
-    VisibleOnStart: true,                ; 启动时是否默认开启常驻 OSD (true: 开启, false: 关闭)
-    PosX: Integer(A_ScreenWidth * 0.835), ; 水平位置: 比如改为 -1000 可以显示在左侧副屏
-    PosY: Integer(A_ScreenHeight * 0.92), ; 垂直位置: 默认屏幕 86% 高度
-    FontSize: 15,                        ; 字体大小
-    FontWeight: 900,                     ; 字体粗细
-    FontAlpha: 200,                      ; 字体透明度 (0-255)
-    ColorOn: "00FF00",                   ; 开启时的颜色
-    ColorOff: "FF3333",                  ; 静音时的颜色
-    OutlineSize: 2,                      ; 描边粗细 (数字越大越粗，0为关闭描边)
-    OutlineColor: "000000"               ; 描边颜色 (黑色最佳)
+    VisibleOnStart: true,                
+    PosX: Integer(A_ScreenWidth * 0.835), 
+    PosY: Integer(A_ScreenHeight * 0.92), 
+    FontSize: 15,                        
+    FontWeight: 900,                     
+    FontAlpha: 200,                      
+    ColorOn: "00FF00",                   
+    ColorOff: "FF3333",                  
+    OutlineSize: 2,                      
+    OutlineColor: "000000"               
 }
 
 ; ==============================================================================
-; 创建 OSD 屏幕提示界面 (纯文字、无描边、基于类的独立配置实现)
+; 创建 OSD 屏幕提示界面
 ; ==============================================================================
 class OSD {
     __New(cfg) {
-        this.cfg := cfg ; 保存独立配置
-        this.OutlineCtrls := [] ; 用于存储描边文本控件的数组
+        this.cfg := cfg 
+        this.OutlineCtrls := [] 
         
         ; 创建 GUI
         this.Gui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20 +E0x08000000")
         
-        ; 修复锯齿和黑边的核心优化：
+        ; 透明色与抗锯齿
         this.Gui.BackColor := "010101"
         WinSetTransColor("010101 " this.cfg.FontAlpha, this.Gui.Hwnd)
         this.Gui.SetFont("s" this.cfg.FontSize " w" this.cfg.FontWeight " q4", "Microsoft YaHei")
         
-        ; 生成描边：在主文字的周围8个方向绘制黑色底层文字
+        ; 生成描边
         if (this.cfg.OutlineSize > 0) {
             s := this.cfg.OutlineSize
-            ; 8 个方向的 X 和 Y 偏移量
             offsets := [[s,0], [-s,0], [0,s], [0,-s], [s,s], [-s,-s], [s,-s], [-s,s]]
             
             for offset in offsets {
@@ -69,27 +69,27 @@ class OSD {
             }
         }
         
-        ; 添加主文字（最后添加，确保置于最顶层，覆盖在描边之上）
+        ; 添加主文字
         this.MainCtrl := this.Gui.Add("Text", "x20 y20 w600 Center c" this.cfg.ColorOn " BackgroundTrans", "")
     }
     
     Update(text, isMuted) {
-        ; 根据静音状态获取当前 OSD 配置的颜色
         currentColor := isMuted ? this.cfg.ColorOff : this.cfg.ColorOn
         
-        ; 更新主文字和颜色
         this.MainCtrl.SetFont("c" currentColor)
         this.MainCtrl.Value := text
         
-        ; 更新描边文字
         for ctrl in this.OutlineCtrls {
             ctrl.Value := text
         }
         
-        ; 【核心修复区】：
-        ; 1. 移除了 WinSetAlwaysOnTop()，因为 GUI 创建时自带 +AlwaysOnTop 已经足够，反复调用会导致透明窗口闪烁或消失。
-        ; 2. 使用 "NA" 替代 "NoActivate"，完全避免系统焦点层级规则介入，保证静默重绘。
+        ; 无焦点显示
         this.Gui.Show("NA x" this.cfg.PosX " y" this.cfg.PosY)
+
+        ; 【核心优化】：针对窗口化全屏游戏的终极置顶 API
+        ; HWND_TOPMOST = -1, SWP_NOMOVE(0x02) | SWP_NOSIZE(0x01) | SWP_NOACTIVATE(0x10) = 0x13
+        ; 这能强行把 OSD 插入到游戏渲染管线之上，且不会引发焦点丢失或闪烁
+        try DllCall("SetWindowPos", "Ptr", this.Gui.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x13)
     }
     
     Hide() {
@@ -97,15 +97,14 @@ class OSD {
     }
 }
 
-; 实例化两个独立的 OSD 对象
+; 实例化对象
 global osd1 := OSD(Osd1_Config)
 global osd2 := OSD(Osd2_Config)
 
-; 记录 AHK 内部当前状态
 global isMuted := StartMuted
-global isOsd2Visible := Osd2_Config.VisibleOnStart  ; 根据配置项决定初始显示状态
+global isOsd2Visible := Osd2_Config.VisibleOnStart  
 
-; 脚本启动时：如果 Studio Pro 已运行，发送一次初始状态的快捷键进行同步，并显示临时 OSD
+; 启动初始化同步
 if WinExist("ahk_exe Studio Pro.exe") {
     if (isMuted) {
         SmartSendToS1(MacroKey_Mute)
@@ -114,11 +113,9 @@ if WinExist("ahk_exe Studio Pro.exe") {
         SmartSendToS1(MacroKey_Unmute)
         osd1.Update("UNMUTED", false)
     }
-    ; 设置定时器隐藏临时 OSD1
     SetTimer(HideOSD1, -Osd1_Config.DisplayTime)
 }
 
-; 脚本启动时，根据配置决定是否显示常驻 OSD2，并匹配启动状态
 if (isOsd2Visible) {
     if (isMuted) {
         osd2.Update("MUTED", true)
@@ -131,10 +128,7 @@ if (isOsd2Visible) {
 ; 快捷键功能区
 ; ==============================================================================
 
-; 【快捷键：Ctrl + F10】 -> 切换 Studio Pro 静音状态并触发 OSD 更新
 ^F10::ToggleStudioProMic()
-
-; 【快捷键：Alt + 3】 -> 开启或关闭 OSD2 (常驻显示开关)
 !3::ToggleOsd2Visibility()
 
 ; ==============================================================================
@@ -152,33 +146,26 @@ ToggleStudioProMic() {
     if (isMuted) {
         SmartSendToS1(MacroKey_Mute)
         osd1.Update("MUTED", true)
-        
-        ; 仅在 OSD2 处于开启状态时更新常驻显示
         if (isOsd2Visible) {
             osd2.Update("MUTED", true)
         }
     } else {
         SmartSendToS1(MacroKey_Unmute)
         osd1.Update("UNMUTED", false)
-        
-        ; 仅在 OSD2 处于开启状态时更新常驻显示
         if (isOsd2Visible) {
             osd2.Update("UNMUTED", false)
         }
     }
     
-    ; 现在只控制 OSD1 的隐藏，且使用 Osd1_Config 的自定义时间
     SetTimer(HideOSD1, -Osd1_Config.DisplayTime)
 }
 
-; 关闭/显示 常驻 OSD2 的控制逻辑
 ToggleOsd2Visibility() {
     global isOsd2Visible, isMuted
     
-    isOsd2Visible := !isOsd2Visible ; 状态反转
+    isOsd2Visible := !isOsd2Visible 
     
     if (isOsd2Visible) {
-        ; 如果重新开启显示，则获取当前真实的麦克风状态并渲染
         if (isMuted) {
             osd2.Update("MUTED", true)
         } else {
@@ -198,7 +185,8 @@ SmartSendToS1(keyToSend) {
         Send(keyToSend) 
     } else {
         SetKeyDelay(10, 30) 
-        ControlSend("{Ctrl up}" . keyToSend, , "ahk_exe Studio Pro.exe")
+        ; 【优化】加入 {Alt up}{Shift up}，防止玩游戏时按着跑/蹲键导致向后台发送了带修饰键的指令而失效
+        ControlSend("{Ctrl up}{Alt up}{Shift up}" . keyToSend, , "ahk_exe Studio Pro.exe")
         SetKeyDelay(-1, -1) 
     }
 }
