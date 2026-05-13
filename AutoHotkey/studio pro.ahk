@@ -18,8 +18,8 @@ global Osd1_Config := {
     FontAlpha: 140,                      ; 字体透明度 (0-255)
     ColorOn: "00FF00",                   ; 开启时的颜色 (绿色)
     ColorOff: "FF3333",                  ; 静音时的颜色 (红色)
-    OutlineSize: 1,                      ; 【新增】描边粗细 (数字越大越粗，0为关闭描边)
-    OutlineColor: "000000",              ; 【新增】描边颜色 (黑色最佳)
+    OutlineSize: 1,                      ; 描边粗细 (数字越大越粗，0为关闭描边)
+    OutlineColor: "000000",              ; 描边颜色 (黑色最佳)
     DisplayTime: 1000                    ; 显示时长(毫秒)，例如 1500 代表 1.5 秒后自动隐藏
 }
 
@@ -27,16 +27,16 @@ global Osd1_Config := {
 ; OSD 2 独立配置区 (例如：副屏幕 / 或者直播画面专用) - 常驻显示
 ; ==============================================================================
 global Osd2_Config := {
-    VisibleOnStart: true,                ; 【新增】启动时是否默认开启常驻 OSD (true: 开启, false: 关闭)
+    VisibleOnStart: true,                ; 启动时是否默认开启常驻 OSD (true: 开启, false: 关闭)
     PosX: Integer(A_ScreenWidth * 0.835), ; 水平位置: 比如改为 -1000 可以显示在左侧副屏
     PosY: Integer(A_ScreenHeight * 0.92), ; 垂直位置: 默认屏幕 86% 高度
-    FontSize: 15,                        ; 可以设置跟 OSD1 完全不同的字体大小
-    FontWeight: 900,                     ; 更粗的字体
-    FontAlpha: 200,                        ; 字体透明度 (0-255)
+    FontSize: 15,                        ; 字体大小
+    FontWeight: 900,                     ; 字体粗细
+    FontAlpha: 200,                      ; 字体透明度 (0-255)
     ColorOn: "00FF00",                   ; 开启时的颜色
     ColorOff: "FF3333",                  ; 静音时的颜色
-    OutlineSize: 2,                      ; 【新增】描边粗细 (数字越大越粗，0为关闭描边)
-    OutlineColor: "000000"               ; 【新增】描边颜色 (黑色最佳)
+    OutlineSize: 2,                      ; 描边粗细 (数字越大越粗，0为关闭描边)
+    OutlineColor: "000000"               ; 描边颜色 (黑色最佳)
 }
 
 ; ==============================================================================
@@ -50,25 +50,18 @@ class OSD {
         ; 创建 GUI
         this.Gui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20 +E0x08000000")
         
-        ; 【修复锯齿和黑边的核心优化 1】：
-        ; 不要用绝对纯黑 "000000" 作为透明色，改用极其接近黑色的 "010101"。
-        ; 这样边缘抗锯齿的过渡色会与 "010101" 融合，配合黑色描边能实现完美的边缘过渡，杜绝杂乱黑边。
+        ; 修复锯齿和黑边的核心优化：
         this.Gui.BackColor := "010101"
         WinSetTransColor("010101 " this.cfg.FontAlpha, this.Gui.Hwnd)
-        
-        ; 【修复锯齿和黑边的核心优化 2】：
-        ; 在字体选项中加入 "q4"。q4 代表 ANTIALIASED_QUALITY（灰度抗锯齿）。
-        ; 它会禁用 Windows 默认的 ClearType（亚像素抗锯齿），消除透明背景下的红蓝锯齿杂色。
         this.Gui.SetFont("s" this.cfg.FontSize " w" this.cfg.FontWeight " q4", "Microsoft YaHei")
         
-        ; 【新增】生成描边：在主文字的周围8个方向绘制黑色底层文字
+        ; 生成描边：在主文字的周围8个方向绘制黑色底层文字
         if (this.cfg.OutlineSize > 0) {
             s := this.cfg.OutlineSize
             ; 8 个方向的 X 和 Y 偏移量
             offsets := [[s,0], [-s,0], [0,s], [0,-s], [s,s], [-s,-s], [s,-s], [-s,s]]
             
             for offset in offsets {
-                ; 基础坐标 x20 y20 加上偏移量
                 ctrlX := 20 + offset[1]
                 ctrlY := 20 + offset[2]
                 ctrl := this.Gui.Add("Text", "x" ctrlX " y" ctrlY " w600 Center c" this.cfg.OutlineColor " BackgroundTrans", "")
@@ -93,9 +86,10 @@ class OSD {
             ctrl.Value := text
         }
         
-        ; 显示并更新位置
-        this.Gui.Show("NoActivate x" this.cfg.PosX " y" this.cfg.PosY)
-        WinSetAlwaysOnTop(1, this.Gui.Hwnd)
+        ; 【核心修复区】：
+        ; 1. 移除了 WinSetAlwaysOnTop()，因为 GUI 创建时自带 +AlwaysOnTop 已经足够，反复调用会导致透明窗口闪烁或消失。
+        ; 2. 使用 "NA" 替代 "NoActivate"，完全避免系统焦点层级规则介入，保证静默重绘。
+        this.Gui.Show("NA x" this.cfg.PosX " y" this.cfg.PosY)
     }
     
     Hide() {
